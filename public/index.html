@@ -8,23 +8,16 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Font Awesome per le icone -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-
-        /* Contenitore principale */
         .app-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -32,17 +25,13 @@
             border-radius: 30px;
             overflow: hidden;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(10px);
         }
-
-        /* Header */
         .header {
             background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
             color: white;
             padding: 2rem;
             text-align: center;
         }
-
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
@@ -51,19 +40,11 @@
             justify-content: center;
             gap: 15px;
         }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-
-        /* Menu categorie */
         .categories-section {
             padding: 2rem;
             background: #f7fafc;
             border-bottom: 1px solid #e2e8f0;
         }
-
         .categories-grid {
             display: flex;
             flex-wrap: wrap;
@@ -71,7 +52,6 @@
             justify-content: center;
             margin-bottom: 2rem;
         }
-
         .category-btn {
             background: white;
             border: 2px solid #e2e8f0;
@@ -86,24 +66,17 @@
             gap: 10px;
             color: #4a5568;
         }
-
-        .category-btn i {
-            font-size: 1.2rem;
-        }
-
+        .category-btn i { font-size: 1.2rem; }
         .category-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             border-color: #667eea;
         }
-
         .category-btn.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: transparent;
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
-
         .search-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -119,12 +92,11 @@
             gap: 10px;
             margin: 0 auto;
         }
-
-        .search-btn:hover {
-            transform: scale(1.02);
+        .search-btn:hover { transform: scale(1.02); }
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
-
-        /* Area risultati */
         .results-area {
             display: flex;
             flex-direction: row;
@@ -132,8 +104,6 @@
             gap: 20px;
             padding: 2rem;
         }
-
-        /* Mappa */
         .map-container {
             flex: 2;
             min-width: 300px;
@@ -142,13 +112,7 @@
             overflow: hidden;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
-
-        #map {
-            height: 100%;
-            width: 100%;
-        }
-
-        /* Lista risultati */
+        #map { height: 100%; width: 100%; }
         .places-list {
             flex: 1;
             min-width: 280px;
@@ -159,7 +123,6 @@
             max-height: 500px;
             overflow-y: auto;
         }
-
         .places-list h3 {
             margin-bottom: 1rem;
             color: #2d3748;
@@ -167,7 +130,6 @@
             align-items: center;
             gap: 10px;
         }
-
         .place-card {
             background: #f7fafc;
             border-radius: 15px;
@@ -177,39 +139,13 @@
             cursor: pointer;
             border-left: 4px solid #667eea;
         }
-
         .place-card:hover {
             transform: translateX(5px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
-
-        .place-name {
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-        }
-
-        .place-address {
-            font-size: 0.85rem;
-            color: #718096;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 0.3rem;
-        }
-
-        .place-distance {
-            font-size: 0.8rem;
-            color: #48bb78;
-            font-weight: bold;
-        }
-
-        .place-details {
-            margin-top: 0.5rem;
-            font-size: 0.8rem;
-        }
-
+        .place-name { font-weight: bold; font-size: 1.1rem; color: #2d3748; margin-bottom: 0.5rem; }
+        .place-address { font-size: 0.85rem; color: #718096; display: flex; align-items: center; gap: 5px; margin-bottom: 0.3rem; }
+        .place-distance { font-size: 0.8rem; color: #48bb78; font-weight: bold; }
         .open-btn {
             background: #667eea;
             color: white;
@@ -219,26 +155,13 @@
             cursor: pointer;
             font-size: 0.75rem;
             margin-top: 0.5rem;
-            transition: background 0.3s ease;
         }
-
-        .open-btn:hover {
-            background: #5a67d8;
-        }
-
-        .loading {
+        .loading, .error, .info {
             text-align: center;
             padding: 2rem;
-            color: #718096;
         }
-
-        .error {
-            color: #e53e3e;
-            text-align: center;
-            padding: 1rem;
-        }
-
-        /* Footer */
+        .error { color: #e53e3e; }
+        .info { color: #3182ce; }
         .footer {
             text-align: center;
             padding: 1.5rem;
@@ -246,37 +169,32 @@
             color: white;
             font-size: 0.8rem;
         }
-
         @media (max-width: 768px) {
-            .results-area {
-                flex-direction: column;
-            }
-            .categories-grid {
-                gap: 10px;
-            }
-            .category-btn {
-                padding: 8px 15px;
-                font-size: 0.85rem;
-            }
+            .results-area { flex-direction: column; }
+            .category-btn { padding: 8px 15px; font-size: 0.85rem; }
+        }
+        /* Marker personalizzato per l'utente */
+        .user-marker {
+            background: none;
+            border: none;
+        }
+        .user-marker i {
+            font-size: 32px;
+            color: #3182ce;
+            text-shadow: 0 0 5px white;
         }
     </style>
 </head>
 <body>
 <div class="app-container">
     <div class="header">
-        <h1>
-            <i class="fas fa-compass"></i>
-            Scopri la tua città
-            <i class="fas fa-map-marker-alt"></i>
-        </h1>
-        <p>📍 Condividi la tua posizione per scoprire i posti migliori nelle vicinanze. Consigli reali basati su OpenStreetMap.</p>
+        <h1><i class="fas fa-compass"></i> Scopri la tua città <i class="fas fa-map-marker-alt"></i></h1>
+        <p>📍 Condividi la tua posizione per trovare negozi, bar, ristoranti e molto altro nelle vicinanze.</p>
     </div>
-
     <div class="categories-section">
         <div class="categories-grid" id="categoriesGrid">
-            <!-- I pulsanti saranno generati da JS per flessibilità, ma li inseriamo statici per semplicità -->
             <button class="category-btn" data-cat="ristoranti"><i class="fas fa-utensils"></i> Ristoranti</button>
-            <button class="category-btn" data-cat="bar"><i class="fas fa-wine-glass-alt"></i> Bar e Pub</button>
+            <button class="category-btn" data-cat="bar"><i class="fas fa-wine-glass-alt"></i> Bar</button>
             <button class="category-btn" data-cat="cafe"><i class="fas fa-coffee"></i> Caffè</button>
             <button class="category-btn" data-cat="negozi"><i class="fas fa-store"></i> Negozi</button>
             <button class="category-btn" data-cat="fast_food"><i class="fas fa-hamburger"></i> Fast Food</button>
@@ -289,220 +207,205 @@
         </div>
         <button id="searchBtn" class="search-btn"><i class="fas fa-search-location"></i> Cerca nelle vicinanze</button>
     </div>
-
     <div id="results-area" class="results-area" style="display: none;">
-        <div class="map-container">
-            <div id="map"></div>
-        </div>
+        <div class="map-container"><div id="map"></div></div>
         <div class="places-list">
             <h3><i class="fas fa-list-ul"></i> Luoghi trovati</h3>
             <div id="placesListContent"></div>
         </div>
     </div>
-
     <div class="footer">
-        <p>📱 I dati provengono da OpenStreetMap. Le distanze sono calcolate in linea d'aria. I risultati includono solo luoghi con nome e posizione registrata.</p>
+        <p>📱 Dati da OpenStreetMap. Le distanze sono in linea d'aria. Clicca su un luogo per centrare la mappa.</p>
     </div>
 </div>
 
 <script>
-    // Elementi DOM
+    // DOM elements
     const searchBtn = document.getElementById('searchBtn');
     const resultsArea = document.getElementById('results-area');
     const placesListContent = document.getElementById('placesListContent');
-    const categoryButtons = document.querySelectorAll('.category-btn');
-
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    
     let selectedCategory = 'ristoranti';
-    let userLat = null;
-    let userLon = null;
+    let userLat = null, userLon = null;
     let map = null;
-    let mapMarkers = [];
-
-    // Gestione selezione categoria
-    categoryButtons.forEach(btn => {
+    let markers = [];
+    
+    // Seleziona categoria di default
+    categoryBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            categoryButtons.forEach(b => b.classList.remove('active'));
+            categoryBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             selectedCategory = btn.getAttribute('data-cat');
         });
     });
-    // Seleziona ristoranti di default
     document.querySelector('.category-btn[data-cat="ristoranti"]').classList.add('active');
-
-    // Inizializza mappa
+    
+    // Inizializza mappa (con un centro provvisorio)
     function initMap(lat, lon) {
         if (map) {
             map.setView([lat, lon], 14);
-        } else {
-            map = L.map('map').setView([lat, lon], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB'
-            }).addTo(map);
-        }
-    }
-
-    // Aggiunge marker alla mappa
-    function addMarker(place, isUser = false) {
-        const popupContent = `
-            <b>${place.name}</b><br>
-            📍 Distanza: ${place.distance} m<br>
-            ${place.address ? `🏠 ${place.address}<br>` : ''}
-            ${place.phone ? `📞 <a href="tel:${place.phone}">${place.phone}</a><br>` : ''}
-            ${place.website ? `<a href="${place.website}" target="_blank">Sito web</a>` : ''}
-        `;
-        const marker = L.marker([place.lat, place.lon]).addTo(map);
-        marker.bindPopup(popupContent);
-        mapMarkers.push(marker);
-        return marker;
-    }
-
-    // Pulisce i marker
-    function clearMarkers() {
-        mapMarkers.forEach(marker => map.removeLayer(marker));
-        mapMarkers = [];
-    }
-
-    // Mostra i risultati nella lista
-    function displayPlacesList(places) {
-        if (!places.length) {
-            placesListContent.innerHTML = '<div class="loading">😕 Nessun luogo trovato nelle vicinanze. Prova una categoria diversa o aumentando il raggio.</div>';
             return;
         }
-
+        map = L.map('map').setView([lat, lon], 14);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB'
+        }).addTo(map);
+    }
+    
+    // Pulisce tutti i marker
+    function clearMarkers() {
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+    }
+    
+    // Aggiunge un marker per un luogo
+    function addPlaceMarker(place) {
+        const popupHtml = `<b>${escapeHtml(place.name)}</b><br>📍 ${place.distance} m<br>${place.address ? escapeHtml(place.address) : ''}`;
+        const marker = L.marker([place.lat, place.lon]).addTo(map);
+        marker.bindPopup(popupHtml);
+        markers.push(marker);
+        return marker;
+    }
+    
+    // Aggiunge il marker utente
+    function addUserMarker(lat, lon) {
+        const userIcon = L.divIcon({
+            className: 'user-marker',
+            html: '<i class="fas fa-user-circle"></i>',
+            iconSize: [32, 32],
+            popupAnchor: [0, -16]
+        });
+        const userMarker = L.marker([lat, lon], { icon: userIcon }).addTo(map);
+        userMarker.bindPopup('<b>La tua posizione</b>');
+        markers.push(userMarker);
+    }
+    
+    // Mostra la lista dei luoghi
+    function displayPlacesList(places) {
+        if (!places || places.length === 0) {
+            placesListContent.innerHTML = '<div class="info">😕 Nessun luogo trovato nelle vicinanze. Prova un\'altra categoria.</div>';
+            return;
+        }
         placesListContent.innerHTML = places.map(place => `
-            <div class="place-card" data-lat="${place.lat}" data-lon="${place.lon}" data-name="${place.name.replace(/"/g, '&quot;')}">
-                <div class="place-name">${place.name}</div>
-                <div class="place-address"><i class="fas fa-map-pin"></i> ${place.address}</div>
+            <div class="place-card" data-lat="${place.lat}" data-lon="${place.lon}">
+                <div class="place-name">${escapeHtml(place.name)}</div>
+                <div class="place-address"><i class="fas fa-map-pin"></i> ${escapeHtml(place.address || 'Indirizzo non disponibile')}</div>
                 <div class="place-distance"><i class="fas fa-road"></i> Distanza: ${place.distance} metri</div>
-                <div class="place-details">
-                    ${place.phone ? `<i class="fas fa-phone-alt"></i> <a href="tel:${place.phone}">${place.phone}</a><br>` : ''}
-                    ${place.opening_hours ? `<i class="fas fa-clock"></i> ${place.opening_hours}<br>` : ''}
-                </div>
                 <button class="open-btn" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lon}', '_blank')">
-                    <i class="fas fa-directions"></i> Apri su Google Maps
+                    <i class="fas fa-directions"></i> Naviga
                 </button>
             </div>
         `).join('');
-
-        // Aggiunge evento click per centrare la mappa sulla card
+        // Aggiungi evento click per centrare la mappa
         document.querySelectorAll('.place-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const lat = parseFloat(card.getAttribute('data-lat'));
-                const lon = parseFloat(card.getAttribute('data-lon'));
+            card.addEventListener('click', (e) => {
+                if (e.target.classList.contains('open-btn')) return;
+                const lat = parseFloat(card.dataset.lat);
+                const lon = parseFloat(card.dataset.lon);
                 map.setView([lat, lon], 17);
             });
         });
     }
-
-    // Funzione principale per cercare i luoghi
-    async function searchNearbyPlaces() {
+    
+    // Funzione di utilità per escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // Chiamata al backend per ottenere i luoghi
+    async function fetchPlaces(lat, lon, category) {
+        const response = await fetch('/api/places', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat, lon, category })
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Errore server: ${response.status} - ${errorText}`);
+        }
+        return await response.json();
+    }
+    
+    // Funzione principale di ricerca
+    async function searchNearby() {
         if (!userLat || !userLon) {
-            alert('Per favore, condividi la tua posizione prima di cercare.');
+            alert("Posizione non disponibile. Clicca su 'Cerca nelle vicinanze' per condividere la posizione.");
             return;
         }
-
-        // Mostra l'area dei risultati e mostra il caricamento
+        // Mostra l'area risultati e lo stato di caricamento
         resultsArea.style.display = 'flex';
-        placesListContent.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i> Sto cercando i posti migliori nelle vicinanze...</div>';
-
+        placesListContent.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i> Ricerca in corso...</div>';
+        
         try {
-            const response = await fetch('/api/places', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    lat: userLat,
-                    lon: userLon,
-                    category: selectedCategory
-                })
-            });
-
-            if (!response.ok) throw new Error('Errore nella ricerca');
-
-            const places = await response.json();
-
-            // Invia anche al tracker per log (opzionale)
+            const places = await fetchPlaces(userLat, userLon, selectedCategory);
+            // Invia un log al server (opzionale, non blocca)
             fetch('/api/track', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     location: { lat: userLat, lon: userLon, accuracy: 0 },
-                    deviceInfo: {
-                        screenWidth: window.screen.width,
-                        language: navigator.language,
-                        platform: navigator.platform
-                    },
+                    deviceInfo: { screenWidth: window.screen.width, language: navigator.language },
                     category: selectedCategory
                 })
-            }).catch(err => console.error('Errore nel logging:', err));
-
-            // Aggiorna la mappa e la lista
+            }).catch(e => console.warn("Log non inviato", e));
+            
+            // Aggiorna mappa e lista
             clearMarkers();
-            // Aggiunge un marker per la posizione dell'utente
-            const userMarker = L.marker([userLat, userLon], {
-                icon: L.divIcon({
-                    className: 'user-marker',
-                    html: '<i class="fas fa-user-circle" style="font-size: 24px; color: #3182ce;"></i>',
-                    iconSize: [24, 24]
-                })
-            }).addTo(map);
-            userMarker.bindPopup('<b>La tua posizione</b>');
-            mapMarkers.push(userMarker);
-
-            places.forEach(place => addMarker(place));
+            addUserMarker(userLat, userLon);
+            places.forEach(place => addPlaceMarker(place));
             displayPlacesList(places);
-
             if (places.length === 0) {
-                placesListContent.innerHTML = '<div class="loading">😕 Nessun luogo trovato nelle vicinanze. Prova una categoria diversa.</div>';
+                placesListContent.innerHTML = '<div class="info">🔍 Nessun luogo trovato. Prova a espandere il raggio o un\'altra categoria.</div>';
             }
-
-        } catch (error) {
-            console.error('Errore:', error);
-            placesListContent.innerHTML = '<div class="error">❌ Errore nel caricamento dei luoghi. Riprova più tardi.</div>';
+        } catch (err) {
+            console.error(err);
+            placesListContent.innerHTML = `<div class="error">❌ Errore: ${err.message}. Riprova più tardi.</div>`;
         }
     }
-
-    // Richiede la posizione e poi cerca
+    
+    // Ottiene la posizione dell'utente e poi cerca
     function requestLocationAndSearch() {
         if (!navigator.geolocation) {
-            alert('Il tuo browser non supporta la geolocalizzazione.');
+            alert("Il tuo browser non supporta la geolocalizzazione.");
             return;
         }
-
         searchBtn.disabled = true;
-        searchBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Sto ottenendo la posizione...';
-
+        searchBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Ottengo la posizione...';
+        
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 userLat = position.coords.latitude;
                 userLon = position.coords.longitude;
+                // Inizializza la mappa con la posizione utente
                 initMap(userLat, userLon);
                 searchBtn.disabled = false;
                 searchBtn.innerHTML = '<i class="fas fa-search-location"></i> Cerca nelle vicinanze';
-                searchNearbyPlaces();
+                searchNearby(); // ora cerca
             },
             (error) => {
                 searchBtn.disabled = false;
                 searchBtn.innerHTML = '<i class="fas fa-search-location"></i> Cerca nelle vicinanze';
-                let errorMsg = '';
+                let msg = "";
                 switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMsg = 'Hai negato il permesso. Ricarica la pagina e accetta per cercare i posti.';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMsg = 'Posizione non disponibile. Verifica il GPS.';
-                        break;
-                    case error.TIMEOUT:
-                        errorMsg = 'Timeout nella richiesta. Riprova.';
-                        break;
-                    default:
-                        errorMsg = 'Errore sconosciuto.';
+                    case error.PERMISSION_DENIED: msg = "Permesso negato. Ricarica la pagina e accetta la richiesta di posizione."; break;
+                    case error.POSITION_UNAVAILABLE: msg = "Posizione non disponibile. Controlla il GPS."; break;
+                    case error.TIMEOUT: msg = "Timeout. Riprova."; break;
+                    default: msg = "Errore sconosciuto.";
                 }
-                alert(`Errore posizione: ${errorMsg}`);
+                alert(`Geolocalizzazione fallita: ${msg}`);
+                console.error(error);
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     }
-
+    
     searchBtn.addEventListener('click', requestLocationAndSearch);
 </script>
 </body>
