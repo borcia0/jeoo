@@ -3,147 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Localizzazione</title>
+    <title>Scopri la tua città - Guida Interattiva</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Font Awesome per le icone -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 1rem;
-            text-align: center;
-            background: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
-        .card {
-            background: white;
-            border-radius: 24px;
+
+        /* Contenitore principale */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
             padding: 2rem;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        button {
-            background: #0066cc;
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        /* Menu categorie */
+        .categories-section {
+            padding: 2rem;
+            background: #f7fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .categories-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .category-btn {
+            background: white;
+            border: 2px solid #e2e8f0;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #4a5568;
+        }
+
+        .category-btn i {
+            font-size: 1.2rem;
+        }
+
+        .category-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+
+        .category-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            font-size: 1.1rem;
-            border-radius: 40px;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
             cursor: pointer;
-            margin-top: 1rem;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
         }
-        button:hover {
-            background: #0052a3;
+
+        .search-btn:hover {
+            transform: scale(1.02);
         }
-        #status {
-            margin-top: 1.5rem;
+
+        /* Area risultati */
+        .results-area {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 2rem;
+        }
+
+        /* Mappa */
+        .map-container {
+            flex: 2;
+            min-width: 300px;
+            height: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Lista risultati */
+        .places-list {
+            flex: 1;
+            min-width: 280px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             padding: 1rem;
-            border-radius: 16px;
-            background: #eef2f7;
+            max-height: 500px;
+            overflow-y: auto;
         }
+
+        .places-list h3 {
+            margin-bottom: 1rem;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .place-card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-left: 4px solid #667eea;
+        }
+
+        .place-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .place-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+
+        .place-address {
+            font-size: 0.85rem;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 0.3rem;
+        }
+
+        .place-distance {
+            font-size: 0.8rem;
+            color: #48bb78;
+            font-weight: bold;
+        }
+
+        .place-details {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .open-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            transition: background 0.3s ease;
+        }
+
+        .open-btn:hover {
+            background: #5a67d8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
         .error {
-            color: #c00;
+            color: #e53e3e;
+            text-align: center;
+            padding: 1rem;
         }
-        .success {
-            color: #2c7a4d;
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            background: #2d3748;
+            color: white;
+            font-size: 0.8rem;
         }
-        .warning {
-            color: #e67e22;
+
+        @media (max-width: 768px) {
+            .results-area {
+                flex-direction: column;
+            }
+            .categories-grid {
+                gap: 10px;
+            }
+            .category-btn {
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
 <body>
-<div class="card">
-    <h1>📍 Benvenuto</h1>
-    <p>Per accedere ai contenuti, abbiamo bisogno della tua posizione esatta.</p>
-    <button id="requestBtn">📡 Condividi posizione</button>
-    <div id="status"></div>
-    <p style="font-size: 0.8rem; margin-top: 2rem; color: #666;">
-        La posizione viene usata solo per statistiche di accesso. <br>
-        Nessun dato viene venduto a terze parti.
-    </p>
+<div class="app-container">
+    <div class="header">
+        <h1>
+            <i class="fas fa-compass"></i>
+            Scopri la tua città
+            <i class="fas fa-map-marker-alt"></i>
+        </h1>
+        <p>📍 Condividi la tua posizione per scoprire i posti migliori nelle vicinanze. Consigli reali basati su OpenStreetMap.</p>
+    </div>
+
+    <div class="categories-section">
+        <div class="categories-grid" id="categoriesGrid">
+            <!-- I pulsanti saranno generati da JS per flessibilità, ma li inseriamo statici per semplicità -->
+            <button class="category-btn" data-cat="ristoranti"><i class="fas fa-utensils"></i> Ristoranti</button>
+            <button class="category-btn" data-cat="bar"><i class="fas fa-wine-glass-alt"></i> Bar e Pub</button>
+            <button class="category-btn" data-cat="cafe"><i class="fas fa-coffee"></i> Caffè</button>
+            <button class="category-btn" data-cat="negozi"><i class="fas fa-store"></i> Negozi</button>
+            <button class="category-btn" data-cat="fast_food"><i class="fas fa-hamburger"></i> Fast Food</button>
+            <button class="category-btn" data-cat="pizzerie"><i class="fas fa-pizza-slice"></i> Pizzerie</button>
+            <button class="category-btn" data-cat="farmacie"><i class="fas fa-prescription-bottle"></i> Farmacie</button>
+            <button class="category-btn" data-cat="supermercati"><i class="fas fa-shopping-basket"></i> Supermercati</button>
+            <button class="category-btn" data-cat="alberghi"><i class="fas fa-hotel"></i> Hotel</button>
+            <button class="category-btn" data-cat="musei"><i class="fas fa-landmark"></i> Musei</button>
+            <button class="category-btn" data-cat="banche"><i class="fas fa-university"></i> Banche</button>
+        </div>
+        <button id="searchBtn" class="search-btn"><i class="fas fa-search-location"></i> Cerca nelle vicinanze</button>
+    </div>
+
+    <div id="results-area" class="results-area" style="display: none;">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        <div class="places-list">
+            <h3><i class="fas fa-list-ul"></i> Luoghi trovati</h3>
+            <div id="placesListContent"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>📱 I dati provengono da OpenStreetMap. Le distanze sono calcolate in linea d'aria. I risultati includono solo luoghi con nome e posizione registrata.</p>
+    </div>
 </div>
 
 <script>
-    const btn = document.getElementById('requestBtn');
-    const statusDiv = document.getElementById('status');
+    // Elementi DOM
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsArea = document.getElementById('results-area');
+    const placesListContent = document.getElementById('placesListContent');
+    const categoryButtons = document.querySelectorAll('.category-btn');
 
-    async function sendToServer(locationData, deviceInfo) {
-        try {
-            const response = await fetch('/api/track', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ location: locationData, deviceInfo: deviceInfo })
-            });
-            if (response.ok) {
-                statusDiv.innerHTML = '<span class="success">✅ Grazie! Posizione registrata correttamente.</span>';
-            } else {
-                statusDiv.innerHTML = '<span class="error">⚠️ Errore durante l’invio. Riprova più tardi.</span>';
-            }
-        } catch (err) {
-            console.error(err);
-            statusDiv.innerHTML = '<span class="error">❌ Problema di connessione al server.</span>';
+    let selectedCategory = 'ristoranti';
+    let userLat = null;
+    let userLon = null;
+    let map = null;
+    let mapMarkers = [];
+
+    // Gestione selezione categoria
+    categoryButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            categoryButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedCategory = btn.getAttribute('data-cat');
+        });
+    });
+    // Seleziona ristoranti di default
+    document.querySelector('.category-btn[data-cat="ristoranti"]').classList.add('active');
+
+    // Inizializza mappa
+    function initMap(lat, lon) {
+        if (map) {
+            map.setView([lat, lon], 14);
+        } else {
+            map = L.map('map').setView([lat, lon], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB'
+            }).addTo(map);
         }
     }
 
-    function getDeviceInfo() {
-        return {
-            screenWidth: window.screen.width,
-            screenHeight: window.screen.height,
-            language: navigator.language,
-            platform: navigator.platform,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            cookiesEnabled: navigator.cookieEnabled,
-            doNotTrack: navigator.doNotTrack
-        };
+    // Aggiunge marker alla mappa
+    function addMarker(place, isUser = false) {
+        const popupContent = `
+            <b>${place.name}</b><br>
+            📍 Distanza: ${place.distance} m<br>
+            ${place.address ? `🏠 ${place.address}<br>` : ''}
+            ${place.phone ? `📞 <a href="tel:${place.phone}">${place.phone}</a><br>` : ''}
+            ${place.website ? `<a href="${place.website}" target="_blank">Sito web</a>` : ''}
+        `;
+        const marker = L.marker([place.lat, place.lon]).addTo(map);
+        marker.bindPopup(popupContent);
+        mapMarkers.push(marker);
+        return marker;
     }
 
-    function getLocation() {
-        statusDiv.innerHTML = '⏳ Richiesta in corso... Attendi il permesso.';
-        if (!navigator.geolocation) {
-            statusDiv.innerHTML = '<span class="error">😞 Il tuo browser non supporta la geolocalizzazione.</span>';
+    // Pulisce i marker
+    function clearMarkers() {
+        mapMarkers.forEach(marker => map.removeLayer(marker));
+        mapMarkers = [];
+    }
+
+    // Mostra i risultati nella lista
+    function displayPlacesList(places) {
+        if (!places.length) {
+            placesListContent.innerHTML = '<div class="loading">😕 Nessun luogo trovato nelle vicinanze. Prova una categoria diversa o aumentando il raggio.</div>';
             return;
         }
 
+        placesListContent.innerHTML = places.map(place => `
+            <div class="place-card" data-lat="${place.lat}" data-lon="${place.lon}" data-name="${place.name.replace(/"/g, '&quot;')}">
+                <div class="place-name">${place.name}</div>
+                <div class="place-address"><i class="fas fa-map-pin"></i> ${place.address}</div>
+                <div class="place-distance"><i class="fas fa-road"></i> Distanza: ${place.distance} metri</div>
+                <div class="place-details">
+                    ${place.phone ? `<i class="fas fa-phone-alt"></i> <a href="tel:${place.phone}">${place.phone}</a><br>` : ''}
+                    ${place.opening_hours ? `<i class="fas fa-clock"></i> ${place.opening_hours}<br>` : ''}
+                </div>
+                <button class="open-btn" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lon}', '_blank')">
+                    <i class="fas fa-directions"></i> Apri su Google Maps
+                </button>
+            </div>
+        `).join('');
+
+        // Aggiunge evento click per centrare la mappa sulla card
+        document.querySelectorAll('.place-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const lat = parseFloat(card.getAttribute('data-lat'));
+                const lon = parseFloat(card.getAttribute('data-lon'));
+                map.setView([lat, lon], 17);
+            });
+        });
+    }
+
+    // Funzione principale per cercare i luoghi
+    async function searchNearbyPlaces() {
+        if (!userLat || !userLon) {
+            alert('Per favore, condividi la tua posizione prima di cercare.');
+            return;
+        }
+
+        // Mostra l'area dei risultati e mostra il caricamento
+        resultsArea.style.display = 'flex';
+        placesListContent.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i> Sto cercando i posti migliori nelle vicinanze...</div>';
+
+        try {
+            const response = await fetch('/api/places', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lat: userLat,
+                    lon: userLon,
+                    category: selectedCategory
+                })
+            });
+
+            if (!response.ok) throw new Error('Errore nella ricerca');
+
+            const places = await response.json();
+
+            // Invia anche al tracker per log (opzionale)
+            fetch('/api/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    location: { lat: userLat, lon: userLon, accuracy: 0 },
+                    deviceInfo: {
+                        screenWidth: window.screen.width,
+                        language: navigator.language,
+                        platform: navigator.platform
+                    },
+                    category: selectedCategory
+                })
+            }).catch(err => console.error('Errore nel logging:', err));
+
+            // Aggiorna la mappa e la lista
+            clearMarkers();
+            // Aggiunge un marker per la posizione dell'utente
+            const userMarker = L.marker([userLat, userLon], {
+                icon: L.divIcon({
+                    className: 'user-marker',
+                    html: '<i class="fas fa-user-circle" style="font-size: 24px; color: #3182ce;"></i>',
+                    iconSize: [24, 24]
+                })
+            }).addTo(map);
+            userMarker.bindPopup('<b>La tua posizione</b>');
+            mapMarkers.push(userMarker);
+
+            places.forEach(place => addMarker(place));
+            displayPlacesList(places);
+
+            if (places.length === 0) {
+                placesListContent.innerHTML = '<div class="loading">😕 Nessun luogo trovato nelle vicinanze. Prova una categoria diversa.</div>';
+            }
+
+        } catch (error) {
+            console.error('Errore:', error);
+            placesListContent.innerHTML = '<div class="error">❌ Errore nel caricamento dei luoghi. Riprova più tardi.</div>';
+        }
+    }
+
+    // Richiede la posizione e poi cerca
+    function requestLocationAndSearch() {
+        if (!navigator.geolocation) {
+            alert('Il tuo browser non supporta la geolocalizzazione.');
+            return;
+        }
+
+        searchBtn.disabled = true;
+        searchBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Sto ottenendo la posizione...';
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                // Controllo precisione: se maggiore di 50 metri avvisa ma accetta lo stesso
-                const accuracy = position.coords.accuracy;
-                if (accuracy > 50) {
-                    statusDiv.innerHTML = `<span class="warning">⚠️ Posizione poco precisa (errore ±${Math.round(accuracy)} m). Prova all'aperto per migliorare.</span>`;
-                }
-                const locationData = {
-                    lat: position.coords.latitude,
-                    lon: position.coords.longitude,
-                    accuracy: accuracy,
-                    altitude: position.coords.altitude || null,
-                    altitudeAccuracy: position.coords.altitudeAccuracy || null,
-                    heading: position.coords.heading || null,
-                    speed: position.coords.speed || null
-                };
-                const deviceInfo = getDeviceInfo();
-                sendToServer(locationData, deviceInfo);
+                userLat = position.coords.latitude;
+                userLon = position.coords.longitude;
+                initMap(userLat, userLon);
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<i class="fas fa-search-location"></i> Cerca nelle vicinanze';
+                searchNearbyPlaces();
             },
             (error) => {
-                console.error('Errore geolocalizzazione:', error);
-                let msg = '';
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<i class="fas fa-search-location"></i> Cerca nelle vicinanze';
+                let errorMsg = '';
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
-                        msg = 'Hai negato il permesso. Ricarica la pagina e accetta per continuare.';
+                        errorMsg = 'Hai negato il permesso. Ricarica la pagina e accetta per cercare i posti.';
                         break;
                     case error.POSITION_UNAVAILABLE:
-                        msg = 'Posizione non disponibile. Verifica il GPS o la connessione.';
+                        errorMsg = 'Posizione non disponibile. Verifica il GPS.';
                         break;
                     case error.TIMEOUT:
-                        msg = 'Timeout nella richiesta. Riprova.';
+                        errorMsg = 'Timeout nella richiesta. Riprova.';
                         break;
                     default:
-                        msg = 'Errore sconosciuto.';
+                        errorMsg = 'Errore sconosciuto.';
                 }
-                statusDiv.innerHTML = `<span class="error">⚠️ ${msg}</span>`;
+                alert(`Errore posizione: ${errorMsg}`);
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     }
 
-    btn.addEventListener('click', getLocation);
+    searchBtn.addEventListener('click', requestLocationAndSearch);
 </script>
 </body>
 </html>
