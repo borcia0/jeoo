@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1780601081910,
+    "timestamp": "2026-06-04T19:24:41.910Z",
+    "ip": "127.0.0.1",
+    "location": {
+      "lat": 45.14509076652189,
+      "lon": 10.002107632823655,
+      "accuracy": 87,
+      "altitude": null,
+      "altitudeAccuracy": null,
+      "heading": null,
+      "speed": null
+    },
+    "deviceInfo": {
+      "screenWidth": 1920,
+      "screenHeight": 1080,
+      "language": "it-IT",
+      "platform": "Win32",
+      "timezone": "Europe/Rome",
+      "cookiesEnabled": true,
+      "doNotTrack": null
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+  }
+]

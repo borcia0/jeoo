@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Posizioni utenti</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        h1 {
+            margin-top: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        #map {
+            height: 500px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #0066cc;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f9ff;
+        }
+        .refresh-btn {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📍 Dashboard geolocalizzazione</h1>
+    <button class="refresh-btn" onclick="loadData()">🔄 Aggiorna dati</button>
+    <div id="map"></div>
+    <h2>Log degli accessi</h2>
+    <table id="logTable">
+        <thead>
+            <tr><th>Data/Ora</th><th>Latitudine</th><th>Longitudine</th><th>Precisione (m)</th><th>User Agent (breve)</th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    let map;
+    let markers = [];
+
+    function initMap() {
+        map = L.map('map').setView([41.9028, 12.4964], 5); // centro Italia
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB'
+        }).addTo(map);
+    }
+
+    function clearMarkers() {
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+    }
+
+    function addMarker(lat, lon, title) {
+        const marker = L.marker([lat, lon]).addTo(map);
+        marker.bindPopup(title);
+        markers.push(marker);
+    }
+
+    async function loadData() {
+        try {
+            // La richiesta include automaticamente le credenziali basic auth (il browser le chiederà)
+            const response = await fetch('/api/logs');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('Autenticazione richiesta per visualizzare la dashboard.');
+                    window.location.reload(); // forza richiesta credenziali
+                }
+                throw new Error('Errore nel caricamento dei log');
+            }
+            const logs = await response.json();
+            renderTable(logs);
+            updateMap(logs);
+        } catch (err) {
+            console.error(err);
+            alert('Impossibile caricare i log. Verifica che il server sia attivo.');
+        }
+    }
+
+    function renderTable(logs) {
+        const tbody = document.querySelector('#logTable tbody');
+        tbody.innerHTML = '';
+        logs.slice().reverse().forEach(log => {
+            const row = tbody.insertRow();
+            const date = new Date(log.timestamp).toLocaleString();
+            const lat = log.location?.lat ?? '—';
+            const lon = log.location?.lon ?? '—';
+            const acc = log.location?.accuracy ? Math.round(log.location.accuracy) : '—';
+            let uaShort = log.userAgent?.substring(0, 60) || '—';
+            if (uaShort.length === 60) uaShort += '…';
+            row.insertCell(0).textContent = date;
+            row.insertCell(1).textContent = lat;
+            row.insertCell(2).textContent = lon;
+            row.insertCell(3).textContent = acc;
+            row.insertCell(4).textContent = uaShort;
+        });
+    }
+
+    function updateMap(logs) {
+        clearMarkers();
+        let bounds = null;
+        logs.forEach(log => {
+            if (log.location && log.location.lat && log.location.lon) {
+                const { lat, lon, accuracy } = log.location;
+                addMarker(lat, lon, `Lat: ${lat}, Lon: ${lon}<br>Precisione: ${accuracy ?? '?'} m<br>${new Date(log.timestamp).toLocaleString()}`);
+                const point = L.latLng(lat, lon);
+                if (!bounds) bounds = L.latLngBounds(point, point);
+                else bounds.extend(point);
+            }
+        });
+        if (bounds && logs.length > 0) map.fitBounds(bounds);
+        else if (logs.length === 0) map.setView([41.9028, 12.4964], 5);
+    }
+
+    initMap();
+    loadData();
+    setInterval(loadData, 15000); // aggiorna ogni 15 secondi
+</script>
+</body>
+</html>
