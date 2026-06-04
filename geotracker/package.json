@@ -1,18 +1,20 @@
 {
-  "name": "geotracker",
+  "name": "i-piedini-di-naomi",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/borcia0/jeoo.git"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "basic-auth": "^2.0.1",
-    "body-parser": "^2.2.2",
-    "cors": "^2.8.6",
-    "express": "^5.2.1"
-  }
+  "bugs": {
+    "url": "https://github.com/borcia0/jeoo/issues"
+  },
+  "homepage": "https://github.com/borcia0/jeoo#readme",
+  "description": ""
 }
