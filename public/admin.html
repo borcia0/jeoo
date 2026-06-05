@@ -2,48 +2,242 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Dashboard posizioni</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { font-family: Arial; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #0066cc; color: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 { font-size: 1.8rem; margin-bottom: 20px; color: #1a202c; }
+        h2 { font-size: 1.4rem; margin: 20px 0 10px; color: #2d3748; }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .refresh-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .refresh-btn:hover { background: #218838; }
+        .stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: #e9ecef;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        #map {
+            height: 450px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 500px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #0066cc;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover { background: #f8f9fa; }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: #718096;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+        }
+        @media (max-width: 768px) {
+            th, td { font-size: 11px; padding: 8px; }
+            .stat-card { font-size: 12px; }
+        }
     </style>
 </head>
 <body>
-<h1>Log degli accessi</h1>
-<table id="logTable">
-    <thead><tr><th>Data</th><th>Latitudine</th><th>Longitudine</th><th>Categoria</th><th>IP</th></thead>
-    <tbody></tbody>
-</table>
+<div class="container">
+    <h1>📍 Dashboard amministratore</h1>
+    <div class="toolbar">
+        <div class="stats">
+            <div class="stat-card">📊 Totale accessi: <span id="totalCount">0</span></div>
+            <div class="stat-card">📍 Con posizione: <span id="withLocation">0</span></div>
+            <div class="stat-card">🕒 Ultimo aggiornamento: <span id="lastUpdate">-</span></div>
+        </div>
+        <button class="refresh-btn" onclick="loadData()">🔄 Aggiorna ora</button>
+    </div>
+    <div id="map"></div>
+    <h2>📋 Log degli accessi</h2>
+    <div class="table-wrapper">
+        <table id="logTable">
+            <thead>
+                <tr><th>Data/Ora</th><th>Latitudine</th><th>Longitudine</th><th>Precisione (m)</th><th>Categoria</th><th>IP</th><th>Browser (UA breve)</th></tr>
+            </thead>
+            <tbody id="logBody">
+                <tr><td colspan="7" class="no-data">Caricamento in corso...</td></tr>
+            </tbody>
+         </table>
+    </div>
+    <div class="footer">
+        🔐 Area riservata | I log sono in memoria (si resettano al riavvio del server)
+    </div>
+</div>
+
 <script>
-    async function loadLogs() {
-        try {
-            const res = await fetch('/api/logs');
-            if (!res.ok) {
-                if (res.status === 401) {
-                    document.body.innerHTML = '<h2>Autenticazione richiesta</h2><p>Usa admin / segreto</p>';
-                    return;
-                }
-                throw new Error('Errore caricamento');
-            }
-            const logs = await res.json();
-            const tbody = document.querySelector('#logTable tbody');
-            tbody.innerHTML = '';
-            logs.forEach(log => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = new Date(log.timestamp).toLocaleString();
-                row.insertCell(1).textContent = log.location?.lat || '-';
-                row.insertCell(2).textContent = log.location?.lon || '-';
-                row.insertCell(3).textContent = log.category || '-';
-                row.insertCell(4).textContent = log.ip || '-';
-            });
-        } catch (err) {
-            console.error(err);
+    let map;
+    let markers = [];
+
+    function initMap() {
+        if (map) return;
+        map = L.map('map').setView([41.9028, 12.4964], 5);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+        }).addTo(map);
+    }
+
+    function clearMarkers() {
+        if (map) {
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
         }
     }
-    loadLogs();
-    setInterval(loadLogs, 10000);
+
+    function addMarker(lat, lon, popupText) {
+        const marker = L.marker([lat, lon]).addTo(map);
+        marker.bindPopup(popupText);
+        markers.push(marker);
+    }
+
+    function getShortUA(ua) {
+        if (!ua) return 'Sconosciuto';
+        if (ua.includes('Chrome')) return 'Chrome';
+        if (ua.includes('Firefox')) return 'Firefox';
+        if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+        if (ua.includes('Edg')) return 'Edge';
+        if (ua.includes('Mobile')) return 'Mobile';
+        return ua.substring(0, 30) + '…';
+    }
+
+    async function loadData() {
+        try {
+            const response = await fetch('/api/logs');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('⚠️ Autenticazione richiesta. Usa admin / segreto');
+                    window.location.reload();
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const logs = await response.json();
+            
+            // Statistiche
+            document.getElementById('totalCount').innerText = logs.length;
+            const withPos = logs.filter(l => l.location && l.location.lat).length;
+            document.getElementById('withLocation').innerText = withPos;
+            document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString();
+            
+            // Tabella
+            const tbody = document.getElementById('logBody');
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="no-data">Nessun accesso registrato</td></tr>';
+            } else {
+                tbody.innerHTML = logs.slice().reverse().map(log => {
+                    const date = new Date(log.timestamp).toLocaleString();
+                    const lat = log.location?.lat ? log.location.lat.toFixed(5) : '-';
+                    const lon = log.location?.lon ? log.location.lon.toFixed(5) : '-';
+                    const acc = log.location?.accuracy ? Math.round(log.location.accuracy) : '-';
+                    const cat = log.category || '-';
+                    const ip = log.ip || '-';
+                    const ua = getShortUA(log.userAgent);
+                    return `<tr>
+                        <td>${date}</td>
+                        <td>${lat}</td>
+                        <td>${lon}</td>
+                        <td>${acc}</td>
+                        <td>${cat}</td>
+                        <td>${ip}</td>
+                        <td>${ua}</td>
+                    </tr>`;
+                }).join('');
+            }
+            
+            // Mappa
+            clearMarkers();
+            initMap();
+            const points = [];
+            logs.forEach(log => {
+                if (log.location && log.location.lat && log.location.lon) {
+                    const lat = log.location.lat;
+                    const lon = log.location.lon;
+                    const popup = `<b>${new Date(log.timestamp).toLocaleString()}</b><br>📍 ${lat.toFixed(5)}, ${lon.toFixed(5)}<br>🔍 ${log.category || '?'}<br>📱 ${getShortUA(log.userAgent)}`;
+                    addMarker(lat, lon, popup);
+                    points.push([lat, lon]);
+                }
+            });
+            if (points.length > 0) {
+                const bounds = L.latLngBounds(points);
+                map.fitBounds(bounds);
+            } else {
+                map.setView([41.9028, 12.4964], 5);
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('logBody').innerHTML = `<tr><td colspan="7" class="no-data">❌ Errore: ${err.message}</td></tr>`;
+        }
+    }
+
+    loadData();
+    setInterval(loadData, 15000);
 </script>
 </body>
 </html>
