@@ -1,9 +1,7 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const fs = require('fs');
 const path = require('path');
-const auth = require('basic-auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,150 +10,71 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// Log file
-const LOG_FILE = path.join(__dirname, 'logs.json');
-let accessLogs = [];
-if (fs.existsSync(LOG_FILE)) {
-  try {
-    accessLogs = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'));
-  } catch(e) { console.error(e); }
-}
-function saveLogs() {
-  fs.writeFile(LOG_FILE, JSON.stringify(accessLogs, null, 2), (err) => {
-    if (err) console.error('Errore scrittura logs.json:', err);
-  });
+// Lista di nomi di locali realistici
+const placeNames = {
+    ristoranti: ['Pizzeria Da Michele', 'Ristorante La Bella Vita', 'Trattoria Nonna Rosa', 'Sushi Wok', 'Ristorante Pizzeria Napoli'],
+    bar: ['Bar Centrale', 'Caffè Lux', 'Bar Sport', "L'Angolo del Caffè", 'Bar Hemingway'],
+    cafe: ['Caffè Torino', 'Gran Caffè', 'Coffee House', 'Caffè Letterario', 'Starbucks'],
+    negozi: ['Zara', 'H&M', 'Foot Locker', 'MediaWorld', 'Coin'],
+    fast_food: ['McDonald\'s', 'Burger King', 'KFC', 'Old Wild West', 'Pizza Hut'],
+    farmacie: ['Farmacia Comunale', 'Farmacia Dottor Rossi', 'Farmacia San Carlo', 'Farmacia Europa'],
+    supermercati: ['Conad', 'Carrefour', 'Lidl', 'Esselunga', 'Coop'],
+    musei: ['Museo Civico', 'Pinacoteca', 'Museo di Storia Naturale', 'Galleria d\'Arte Moderna']
+};
+
+// Genera un indirizzo fittizio basato su lat/lon
+function fakeAddress(lat, lon) {
+    const streets = ['Via Roma', 'Corso Vittorio', 'Piazza Garibaldi', 'Viale dei Mille', 'Via Dante', 'Largo XX Settembre'];
+    const street = streets[Math.floor(Math.random() * streets.length)];
+    const number = Math.floor(Math.random() * 200) + 1;
+    return `${street} ${number}`;
 }
 
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371e3;
-  const φ1 = lat1 * Math.PI/180;
-  const φ2 = lat2 * Math.PI/180;
-  const Δφ = (lat2-lat1) * Math.PI/180;
-  const Δλ = (lon2-lon1) * Math.PI/180;
-  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
+// Calcola una distanza fittizia tra 100 e 1500 metri
+function fakeDistance() {
+    return Math.floor(Math.random() * 1400) + 100;
 }
 
-function getOsmTag(category) {
-  const tags = {
-    'ristoranti': 'amenity=restaurant',
-    'bar': 'amenity=bar',
-    'cafe': 'amenity=cafe',
-    'negozi': 'shop=*',
-    'fast_food': 'amenity=fast_food',
-    'pizzerie': 'cuisine=pizza',
-    'farmacie': 'amenity=pharmacy',
-    'supermercati': 'shop=supermarket',
-    'alberghi': 'tourism=hotel',
-    'musei': 'tourism=museum',
-    'banche': 'amenity=bank'
-  };
-  return tags[category] || 'amenity=*';
-}
+app.post('/api/places', (req, res) => {
+    const { lat, lon, category } = req.body;
+    console.log(`[RICHIESTA] Categoria: ${category} a (${lat}, ${lon}) – risposta di esempio`);
 
-async function fetchPlacesFromOSM(lat, lon, category, radius = 1000) {
-  const osmTag = getOsmTag(category);
-  const [key, value] = osmTag.split('=');
-  const query = `
-    [out:json];
-    (
-      node["${key}"="${value}"](around:${radius},${lat},${lon});
-      way["${key}"="${value}"](around:${radius},${lat},${lon});
-    );
-    out body;
-    >;
-    out skel qt;
-  `;
-  console.log('Query Overpass:', query);
-  
-  const url = 'https://overpass-api.de/api/interpreter';
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `data=${encodeURIComponent(query)}`
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const data = await response.json();
-  console.log(`Elementi grezzi: ${data.elements?.length || 0}`);
-  
-  const places = [];
-  for (const el of data.elements) {
-    if (!el.tags || !el.tags.name) continue;
-    let latVal = el.lat;
-    let lonVal = el.lon;
-    if (!latVal && el.center) {
-      latVal = el.center.lat;
-      lonVal = el.center.lon;
+    if (!lat || !lon || !category) {
+        return res.status(400).json({ error: 'Parametri mancanti' });
     }
-    if (!latVal || !lonVal) continue;
-    
-    let address = '';
-    if (el.tags['addr:street']) address += el.tags['addr:street'] + ' ';
-    if (el.tags['addr:housenumber']) address += el.tags['addr:housenumber'] + ', ';
-    if (el.tags['addr:city']) address += el.tags['addr:city'];
-    if (!address.trim()) address = 'Indirizzo non disponibile';
-    
-    const distance = Math.round(calculateDistance(lat, lon, latVal, lonVal));
-    places.push({
-      id: el.id,
-      name: el.tags.name,
-      lat: latVal,
-      lon: lonVal,
-      address: address.trim(),
-      distance: distance,
-      phone: el.tags.phone || null,
-      website: el.tags.website || null
-    });
-  }
-  places.sort((a,b) => a.distance - b.distance);
-  return places.slice(0, 30);
-}
 
-app.post('/api/places', async (req, res) => {
-  const { lat, lon, category } = req.body;
-  console.log(`Richiesta places: lat=${lat}, lon=${lon}, cat=${category}`);
-  if (!lat || !lon || !category) {
-    return res.status(400).json({ error: 'Parametri mancanti' });
-  }
-  try {
-    const places = await fetchPlacesFromOSM(lat, lon, category);
+    const names = placeNames[category] || placeNames.ristoranti;
+    // Genera 6-8 locali fittizi
+    const numPlaces = Math.floor(Math.random() * 5) + 5; // tra 5 e 9
+    const places = [];
+    for (let i = 0; i < numPlaces; i++) {
+        // Variazione di lat/lon di circa 0.002-0.01 gradi (200-1000 metri)
+        const deltaLat = (Math.random() - 0.5) * 0.01;
+        const deltaLon = (Math.random() - 0.5) * 0.01;
+        places.push({
+            id: i,
+            name: names[Math.floor(Math.random() * names.length)] + (i > 0 ? ` ${i}` : ''),
+            lat: lat + deltaLat,
+            lon: lon + deltaLon,
+            address: fakeAddress(lat, lon),
+            distance: fakeDistance()
+        });
+    }
+    // Ordina per distanza
+    places.sort((a, b) => a.distance - b.distance);
+    console.log(`[OK] Generati ${places.length} ${category} di esempio`);
     res.json(places);
-  } catch (error) {
-    console.error('Errore /api/places:', error);
-    res.status(500).json({ error: 'Errore nel recupero dei luoghi. Riprova più tardi.' });
-  }
 });
 
 app.post('/api/track', (req, res) => {
-  const { location, deviceInfo, category } = req.body;
-  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  accessLogs.push({
-    id: Date.now(),
-    timestamp: new Date().toISOString(),
-    ip: clientIp,
-    location: location || null,
-    deviceInfo: deviceInfo || {},
-    userAgent: req.headers['user-agent'],
-    category: category || 'sconosciuta'
-  });
-  saveLogs();
-  res.status(200).json({ status: 'ok' });
+    console.log('Track:', req.body);
+    res.json({ ok: true });
 });
 
-function authenticate(req, res, next) {
-  const user = auth(req);
-  if (!user || user.name !== 'admin' || user.pass !== 'segreto') {
-    res.set('WWW-Authenticate', 'Basic realm="Admin"');
-    return res.status(401).send('Autenticazione richiesta');
-  }
-  next();
-}
-app.get('/api/logs', authenticate, (req, res) => res.json(accessLogs));
-app.get('/admin', authenticate, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`✅ Server (modalità esempio) su http://localhost:${PORT}`);
 });
